@@ -1,0 +1,500 @@
+{%- comment -%}
+  Icons dependency: Phosphor Icons
+{%- endcomment -%}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web/src/regular/style.css" />
+
+{%- style -%}
+  /* コンテナ幅の動的制御 */
+  #shopify-section-{{ section.id }} .section-wrapper {
+    margin: 0 auto;
+    padding: 32px 16px;
+    width: 100%;
+    max-width: var(--container-width);
+  }
+
+  /* 設定値に基づくCSS変数定義 */
+  #shopify-section-{{ section.id }} {
+    --title-color: {{ section.settings.title_color }};
+    --text-color: {{ section.settings.text_color }};
+    --content-color: {{ section.settings.content_color }};
+    --icon-color: {{ section.settings.icon_color }};
+    
+    {% case section.settings.container_width %}
+      {% when 'standard' %}
+        --container-width: 1280px;
+      {% when 'wide' %}
+        --container-width: 1600px;
+      {% when 'full' %}
+        --container-width: 100%;
+    {% endcase %}
+  }
+
+  /* アコーディオン基本スタイル */
+  .shopdev-accordion .accordion-item {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .shopdev-accordion .accordion-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: opacity 0.3s ease;
+    color: var(--text-color);
+  }
+
+  .shopdev-accordion .accordion-button:hover {
+    opacity: 0.7;
+  }
+
+  .shopdev-accordion .accordion-icon {
+    transition: transform 0.3s ease;
+    font-size: 20px;
+    flex-shrink: 0;
+    color: var(--icon-color);
+  }
+
+  .shopdev-accordion .accordion-button.active .accordion-icon {
+    transform: rotate(180deg);
+  }
+
+  .shopdev-accordion .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .shopdev-accordion .accordion-inner {
+    padding-bottom: 24px;
+  }
+  
+  /* * テキストスタイルの強力な上書き (PCでの視認性向上)
+   * !important を使用してテーマのCSSに負けないようにしています
+   */
+  .shopdev-accordion .accordion-inner,
+  .shopdev-accordion .accordion-inner p,
+  .shopdev-accordion .accordion-inner span,
+  .shopdev-accordion .accordion-inner li,
+  .shopdev-accordion .accordion-inner div {
+    color: #000000 !important;       /* 完全に真っ黒にする */
+    font-size: 16px !important;      /* PCで読みやすい標準サイズ */
+    line-height: 1.8 !important;     /* 行間を広げて読みやすく */
+    font-weight: 400 !important;     /* 文字を細くしすぎない */
+    letter-spacing: 0.02em;          /* ほんの少し文字間隔を空ける */
+  }
+
+  /* スマホでの微調整（少しだけサイズを落とすが、それでも読みやすく） */
+  @media (max-width: 768px) {
+    .shopdev-accordion .accordion-inner,
+    .shopdev-accordion .accordion-inner p,
+    .shopdev-accordion .accordion-inner span,
+    .shopdev-accordion .accordion-inner li,
+    .shopdev-accordion .accordion-inner div {
+      font-size: 15px !important;
+    }
+    
+    .shopdev-accordion .accordion-button { padding: 16px 0; }
+    .shopdev-accordion .notice-box { padding: 16px; }
+    .shopdev-accordion .section-title { font-size: 1.5rem; }
+  }
+
+  .shopdev-accordion .accordion-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    padding-right: 16px;
+    letter-spacing: 0.05em;
+  }
+
+  /* 注意事項ボックス */
+  .shopdev-accordion .notice-box {
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .shopdev-accordion .notice-box-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .shopdev-accordion .notice-box-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .shopdev-accordion .notice-box-content {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  .shopdev-accordion .section-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--title-color);
+  }
+
+  /* レスポンシブ画像対応 */
+  .shopdev-accordion .accordion-inner img {
+    max-width: 100%;
+    height: auto;
+  }
+
+{%- endstyle -%}
+
+<div class="shopdev-accordion">
+  <div class="section-wrapper">
+    {% if section.settings.section_title != blank %}
+      <h2 class="section-title">
+        {{ section.settings.section_title }}
+      </h2>
+    {% endif %}
+
+    <div class="accordion-container" data-single-open="{{ section.settings.single_open }}">
+      {% for block in section.blocks %}
+        {% case block.type %}
+          
+          {%- comment -%} 注意事項ボックス {%- endcomment -%}
+          {% when 'notice_box' %}
+            {% if block.settings.title != blank %}
+              <div class="notice-box" {{ block.shopify_attributes }} style="background-color: {{ block.settings.background_color }}; border-color: {{ block.settings.border_color }};">
+                <h3 class="notice-box-title" style="color: {{ block.settings.title_color }}">
+                  <i class="ph ph-warning-circle notice-box-icon"></i>
+                  {{ block.settings.title }}
+                </h3>
+                {% if block.settings.content != blank %}
+                  <div class="notice-box-content" style="color: {{ block.settings.text_color }}">
+                    {{ block.settings.content }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+
+          {%- comment -%} 商品説明専用ブロック（自動） {%- endcomment -%}
+          {% when 'description' %}
+            <div class="accordion-item" {{ block.shopify_attributes }}>
+              <button 
+                class="accordion-button {% if block.settings.open_by_default %}active{% endif %}" 
+                type="button"
+                aria-expanded="{{ block.settings.open_by_default }}"
+                data-accordion-button
+              >
+                <h3 class="accordion-title">
+                  {{ block.settings.title }}
+                </h3>
+                <i class="ph ph-caret-down accordion-icon"></i>
+              </button>
+              
+              <div 
+                class="accordion-content" 
+                data-accordion-content
+                style="{% if block.settings.open_by_default %}max-height: none;{% endif %}"
+              >
+                <div class="accordion-inner">
+                  {%- if product.description != blank -%}
+                    {{ product.description }}
+                  {%- else -%}
+                    <p>商品説明が登録されていません。</p>
+                  {%- endif -%}
+                </div>
+              </div>
+            </div>
+
+          {%- comment -%} 汎用アコーディオン項目（手動テキスト） {%- endcomment -%}
+          {% when 'accordion_item' %}
+            {% if block.settings.title != blank %}
+              <div class="accordion-item" {{ block.shopify_attributes }}>
+                <button 
+                  class="accordion-button {% if block.settings.open_by_default %}active{% endif %}" 
+                  type="button"
+                  aria-expanded="{{ block.settings.open_by_default }}"
+                  data-accordion-button
+                >
+                  <h3 class="accordion-title">
+                    {{ block.settings.title }}
+                  </h3>
+                  <i class="ph ph-caret-down accordion-icon"></i>
+                </button>
+                
+                <div 
+                  class="accordion-content" 
+                  data-accordion-content
+                  style="{% if block.settings.open_by_default %}max-height: none;{% endif %}"
+                >
+                  <div class="accordion-inner">
+                    {{ block.settings.content }}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+        {% endcase %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  if (!customElements.get('shopdev-accordion')) {
+    class ProductAccordion {
+      constructor(container) {
+        this.container = container;
+        this.buttons = container.querySelectorAll('[data-accordion-button]');
+        this.singleOpen = container.dataset.singleOpen === 'true';
+        this.init();
+      }
+
+      init() {
+        this.buttons.forEach(button => {
+          if (button.classList.contains('active')) {
+             const content = button.nextElementSibling;
+             content.style.maxHeight = content.scrollHeight + "px";
+          }
+          button.addEventListener('click', (e) => this.toggleAccordion(e.currentTarget));
+        });
+        
+        window.addEventListener('resize', () => this.recalculateHeights());
+      }
+
+      recalculateHeights() {
+        this.buttons.forEach(button => {
+          if (button.classList.contains('active')) {
+            const content = button.nextElementSibling;
+            content.style.maxHeight = content.scrollHeight + "px";
+          }
+        });
+      }
+
+      toggleAccordion(button) {
+        const content = button.nextElementSibling;
+        const isActive = button.classList.contains('active');
+        
+        if (this.singleOpen && !isActive) {
+          this.buttons.forEach(btn => {
+            if (btn !== button && btn.classList.contains('active')) {
+              this.closeItem(btn);
+            }
+          });
+        }
+
+        if (isActive) {
+          this.closeItem(button);
+        } else {
+          this.openItem(button, content);
+        }
+      }
+
+      closeItem(button) {
+        const content = button.nextElementSibling;
+        button.classList.remove('active');
+        button.setAttribute('aria-expanded', 'false');
+        content.style.maxHeight = null;
+      }
+
+      openItem(button, content) {
+        button.classList.add('active');
+        button.setAttribute('aria-expanded', 'true');
+        content.style.maxHeight = content.scrollHeight + "px";
+      }
+    }
+
+    const initAccordions = () => {
+      document.querySelectorAll('.accordion-container').forEach(container => {
+        new ProductAccordion(container);
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', initAccordions);
+    document.addEventListener('shopify:section:load', initAccordions);
+  }
+</script>
+
+{% schema %}
+{
+  "name": "商品詳細アコーディオン",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "レイアウト設定"
+    },
+    {
+      "type": "select",
+      "id": "container_width",
+      "label": "セクションの幅",
+      "options": [
+        { "value": "standard", "label": "標準 (約1280px)" },
+        { "value": "wide", "label": "ワイド (約1600px)" },
+        { "value": "full", "label": "フル幅 (100%)" }
+      ],
+      "default": "wide"
+    },
+    {
+      "type": "text",
+      "id": "section_title",
+      "label": "セクションタイトル"
+    },
+    {
+      "type": "checkbox",
+      "id": "single_open",
+      "label": "一度に1つのみ開く",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "カラー設定"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "セクションタイトルの色",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "アコーディオンタイトルの色",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "content_color",
+      "label": "コンテンツテキストの色",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "アイコンの色",
+      "default": "#000000"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "description",
+      "name": "商品説明（自動埋込）",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "タイトル",
+          "default": "商品説明"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "デフォルトで開く",
+          "default": true
+        },
+        {
+          "type": "paragraph",
+          "content": "※商品管理画面に入力された説明文が自動的に表示されます。"
+        }
+      ]
+    },
+    {
+      "type": "accordion_item",
+      "name": "汎用アコーディオン（手動）",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "タイトル",
+          "default": "サイズ・素材"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "コンテンツ",
+          "default": "<p>詳細情報を入力してください。</p>"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "デフォルトで開く",
+          "default": false
+        }
+      ]
+    },
+    {
+      "type": "notice_box",
+      "name": "注意事項ボックス",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "タイトル",
+          "default": "重要なお知らせ"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "コンテンツ",
+          "default": "<p>注意事項を記載してください。</p>"
+        },
+        {
+          "type": "color",
+          "id": "background_color",
+          "label": "背景色",
+          "default": "#fef3c7"
+        },
+        {
+          "type": "color",
+          "id": "border_color",
+          "label": "枠線の色",
+          "default": "#f59e0b"
+        },
+        {
+          "type": "color",
+          "id": "title_color",
+          "label": "タイトルの色",
+          "default": "#92400e"
+        },
+        {
+          "type": "color",
+          "id": "text_color",
+          "label": "テキストの色",
+          "default": "#78350f"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "商品詳細アコーディオン",
+      "blocks": [
+        {
+          "type": "description"
+        },
+        {
+          "type": "accordion_item",
+          "settings": {
+            "title": "送料・配送について"
+          }
+        },
+        {
+          "type": "notice_box"
+        }
+      ]
+    }
+  ],
+  "enabled_on": {
+    "templates": ["product"],
+    "groups": ["footer"]
+  }
+}
+{% endschema %}
