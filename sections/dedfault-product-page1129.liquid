@@ -1,0 +1,609 @@
+{% comment %}
+  Section: Chealsea Order Form (Standard Sizes Only)
+  Updated by Shopify Expert: Kept S/M/L Selection, Removed Custom Measurement Inputs
+{% endcomment %}
+
+<link rel="stylesheet" href="{{ 'bridesmaids-preorder.css' | asset_url }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web/src/regular/style.css" />
+
+{%- capture container_width_class -%}
+  {%- case section.settings.container_width -%}
+    {%- when 'standard' -%}max-w-7xl
+    {%- when 'wide' -%}max-w-[1600px]
+    {%- when 'full' -%}max-w-full
+  {%- endcase -%}
+{%- endcapture -%}
+
+<div class="shopdev-pre-order-product-form w-full {{ container_width_class }} mx-auto px-4 py-8 md:py-12">
+  <style>
+    .chealsea-thumbnail-strip {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f5f5;
+    }
+    .chealsea-thumbnail-strip::-webkit-scrollbar {
+      height: 6px;
+    }
+    .chealsea-thumbnail-strip::-webkit-scrollbar-track {
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+    .chealsea-thumbnail-strip::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+    .chealsea-thumbnail-strip::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+    
+    /* ワイド表示時の画像調整 */
+    {% if section.settings.container_width == 'wide' or section.settings.container_width == 'full' %}
+      @media (min-width: 1024px) {
+        .shopdev-pre-order-product-form .grid {
+          gap: 4rem; /* 画像とフォームの間隔を少し広げる */
+        }
+      }
+    {% endif %}
+  </style>
+
+  {% if section.settings.show_breadcrumb %}
+    <nav class="mb-6 text-sm">
+      <ol class="flex items-center space-x-2 text-gray-600">
+        <li><a href="/" class="hover:text-gray-900">ホーム</a></li>
+        <li><i class="ph ph-caret-right text-xs"></i></li>
+        <li><a href="/collections/all" class="hover:text-gray-900">商品一覧</a></li>
+        <li><i class="ph ph-caret-right text-xs"></i></li>
+        <li class="text-gray-900">{{ product.title }}</li>
+      </ol>
+    </nav>
+  {% endif %}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+    <div class="space-y-4">
+      <div class="relative aspect-[3/4] bg-gray-100">
+        {% if section.settings.badge_text != blank %}
+          <div class="badge-overlay">{{ section.settings.badge_text }}</div>
+        {% endif %}
+        
+        <img id="mainImage" 
+             src="{{ product.featured_image | image_url: width: 1200 }}" 
+             alt="{{ product.title }}"
+             class="w-full h-full object-cover">
+      </div>
+      
+      {% if product.images.size > 1 %}
+        {% assign max_images = section.settings.max_thumbnail_images %}
+        {% if max_images == 0 %}
+          {% assign max_images = product.images.size %}
+        {% endif %}
+        
+        <div class="chealsea-thumbnail-strip flex gap-2 overflow-x-auto pb-2">
+          {% for image in product.images limit: max_images %}
+            <div class="thumbnail-container flex-shrink-0 w-20 h-28 rounded-md overflow-hidden cursor-pointer {% if forloop.first %}thumbnail-active{% else %}thumbnail-inactive{% endif %}" 
+                 onclick="changeMainImage('{{ image | image_url: width: 1200 }}', this)">
+              <img src="{{ image | image_url: width: 200 }}" 
+                   alt="{{ product.title }}"
+                   class="w-full h-full object-cover">
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold mb-2">{{ product.title }}</h1>
+        <div class="text-2xl font-semibold" id="priceDisplay">
+          ¥<span id="currentPrice">{{ product.price | money_without_currency }}</span>
+        </div>
+      </div>
+
+      <form id="preOrderForm" class="space-y-6">
+        {% if section.settings.enable_color_selection %}
+        <div>
+          <label class="block text-sm font-medium mb-3">
+             {{ section.settings.color_label }} <span class="text-red-600">*</span>
+          </label>
+          <div class="flex flex-wrap gap-3" id="colorSwatches">
+            </div>
+          <div id="selectedColorName" class="mt-2 text-sm text-gray-700" style="display: none;">
+            選択中: <span id="selectedColorText" class="font-medium"></span>
+          </div>
+          <input type="hidden" id="selectedColor" name="properties[{{ section.settings.color_label }}]">
+          <div id="colorError" class="error-message hidden">{{ section.settings.color_label }}を選択してください</div>
+        </div>
+        {% endif %}
+
+        {%- comment -%}
+          S/M/L選択ブロックを維持
+        {%- endcomment -%}
+        {% if section.settings.enable_size_selection %}
+        <div>
+          <label class="block text-sm font-medium mb-3">{{ section.settings.size_label }} <span class="text-red-600">*</span></label>
+          <div class="grid grid-cols-3 gap-3" id="sizeOptions">
+            {% assign sizes = section.settings.size_options | split: ',' %}
+            {% for size in sizes %}
+              {% assign trimmed_size = size | strip %}
+              <div class="size-option px-4 py-3 text-center rounded-md" onclick="selectSize(this, '{{ trimmed_size }}')">{{ trimmed_size }}</div>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="selectedSize" name="properties[{{ section.settings.size_label }}]" value="">
+          <div id="sizeError" class="error-message hidden">{{ section.settings.size_label }}を選択してください</div>
+        </div>
+        {% endif %}
+
+        {%- comment -%}
+          詳細な採寸入力フォーム削除済み
+        {%- endcomment -%}
+
+        {% if section.settings.enable_delivery_options %}
+        <div>
+          <label class="block text-sm font-medium mb-3">{{ section.settings.delivery_label }} <span class="text-red-600">*</span></label>
+          <div class="space-y-3">
+            <div class="delivery-option p-4 rounded-md selected" onclick="selectDelivery(this, 'standard')" id="standardDeliveryOption">
+              <div class="font-medium mb-1">{{ section.settings.standard_delivery_name }}</div>
+              <div class="text-sm text-gray-600 mb-1">{{ section.settings.standard_delivery_description }}</div>
+              <div class="text-sm text-gray-700" id="standardDeliveryDate">納品予定日: <span id="standardDateRange"></span></div>
+            </div>
+            <div class="delivery-option p-4 rounded-md" onclick="selectDelivery(this, 'express')" id="expressDeliveryOption">
+              <div class="font-medium mb-1">{{ section.settings.express_delivery_name }}</div>
+              <div class="text-sm text-gray-600 mb-1">{{ section.settings.express_delivery_description }}</div>
+              <div class="text-sm text-gray-700" id="expressDeliveryDate">納品予定日: <span id="expressDateRange"></span></div>
+            </div>
+          </div>
+          </div>
+        {% endif %}
+
+        {% if section.settings.enable_usage_date %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="usageDate">
+            {{ section.settings.usage_date_label }} <span class="text-red-600">*</span>
+          </label>
+          <input type="date" 
+                 id="usageDate" 
+                 name="properties[{{ section.settings.usage_date_label }}]"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                 required>
+          <div id="dateError" class="error-message hidden">{{ section.settings.usage_date_label }}を選択してください</div>
+        </div>
+        {% endif %}
+
+        {% if section.settings.enable_group_name %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="groupName">
+            {{ section.settings.group_name_label }}
+          </label>
+          <input type="text" 
+                 id="groupName" 
+                 name="properties[{{ section.settings.group_name_label }}]"
+                 placeholder="{{ section.settings.group_name_placeholder }}"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black">
+        </div>
+        {% endif %}
+
+        {% if section.settings.enable_usage_scene %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="usageScene">
+            {{ section.settings.usage_scene_label }} <span class="text-red-600">*</span>
+          </label>
+          <select id="usageScene" 
+                  name="properties[{{ section.settings.usage_scene_label }}]"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  required>
+            <option value="">選択してください</option>
+            {% assign scenes = section.settings.usage_scene_options | split: ',' %}
+            {% for scene in scenes %}
+              {% assign trimmed_scene = scene | strip %}
+              <option value="{{ trimmed_scene }}">{{ trimmed_scene }}</option>
+            {% endfor %}
+          </select>
+          <div id="sceneError" class="error-message hidden">{{ section.settings.usage_scene_label }}を選択してください</div>
+        </div>
+        {% endif %}
+
+        {% if section.settings.enable_comments %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="comments">
+            {{ section.settings.comments_label }}
+          </label>
+          <textarea id="comments" 
+                    name="properties[{{ section.settings.comments_label }}]"
+                    rows="4"
+                    placeholder="{{ section.settings.comments_placeholder }}"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"></textarea>
+        </div>
+        {% endif %}
+
+        <div>
+          <label class="block text-sm font-medium mb-2">数量</label>
+          <div class="flex items-center space-x-4">
+            <button type="button" class="quantity-btn rounded-md" onclick="updateQuantity(-1)">
+              <i class="ph ph-minus"></i>
+            </button>
+            <input type="number" 
+                   id="quantity" 
+                   name="quantity"
+                   value="1" 
+                   min="1"
+                   class="w-20 text-center px-4 py-2 border border-gray-300 rounded-md"
+                   onchange="updateTotalPrice()">
+            <button type="button" class="quantity-btn rounded-md" onclick="updateQuantity(1)">
+              <i class="ph ph-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-md">
+          <div class="flex justify-between items-center text-lg font-semibold">
+            <span>合計金額</span>
+            <span>¥<span id="totalPrice">{{ product.price | money_without_currency }}</span></span>
+          </div>
+        </div>
+
+        {% if section.settings.policy_text != blank %}
+          <div class="flex items-start space-x-2">
+            <input type="checkbox" 
+                   id="policyAgree" 
+                   class="mt-1"
+                   required>
+            <label for="policyAgree" class="text-sm text-gray-700">
+              {{ section.settings.policy_text }}
+              {% if section.settings.policy_link != blank %}
+                <a href="{{ section.settings.policy_link }}" class="text-blue-600 hover:underline" target="_blank">利用規約</a>
+              {% endif %}
+              に同意します <span class="text-red-600">*</span>
+            </label>
+          </div>
+          <div id="policyError" class="error-message hidden">利用規約に同意してください</div>
+        {% endif %}
+
+        <button type="submit" 
+                id="addToCartBtn"
+                class="w-full bg-black text-white py-4 rounded-md font-medium hover:bg-gray-800 transition-colors duration-300 flex items-center justify-center space-x-2">
+          <i class="ph ph-shopping-cart text-xl"></i>
+          <span>カートに追加</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{%- comment -%}
+  商品オプションとセクション設定をJSONとしてJavaScriptに渡す
+{%- endcomment -%}
+<script type="application/json" id="product-data-json">
+  {
+    "productHandle": {{ product.handle | json }},
+    "basePrice": {{ product.price | json }},
+    "expressFee": {{ section.settings.express_fee | times: 100 | json }},
+    "standardDeliveryFee": {{ section.settings.standard_delivery_fee | times: 100 | json }},
+    "standardMinDays": {{ section.settings.standard_min_days | json }},
+    "standardMaxDays": {{ section.settings.standard_max_days | json }},
+    "expressMinDays": {{ section.settings.express_min_days | json }},
+    "expressMaxDays": {{ section.settings.express_max_days | json }},
+    "variantId": {{ product.selected_or_first_available_variant.id | json }},
+    "enableColorSelection": {{ section.settings.enable_color_selection | json }},
+    "enableSizeSelection": {{ section.settings.enable_size_selection | json }},
+    "enableDeliveryOptions": {{ section.settings.enable_delivery_options | json }},
+    "customColors": {{ section.settings.custom_colors | json }},
+    "standardDeliveryName": {{ section.settings.standard_delivery_name | json }},
+    "standardDeliveryDescription": {{ section.settings.standard_delivery_description | json }},
+    "expressDeliveryName": {{ section.settings.express_delivery_name | json }},
+    "expressDeliveryDescription": {{ section.settings.express_delivery_description | json }},
+    "variants": [
+      {%- for variant in product.variants -%}
+        {
+          "id": {{ variant.id | json }},
+          "title": {{ variant.title | json }},
+          "option1": {{ variant.option1 | json }},
+          "option2": {{ variant.option2 | json }},
+          "option3": {{ variant.option3 | json }},
+          "price": {{ variant.price | json }},
+          "featured_image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 800 | json }}{% else %}null{% endif %}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ],
+    "options": [
+      {%- for option in product.options_with_values -%}
+        {
+          "name": {{ option.name | json }},
+          "position": {{ option.position | json }},
+          "values": {{ option.values | json }}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+</script>
+
+<script src="{{ 'chealsea-order-form.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Default Product Page 1129",
+  "settings": [
+    {
+      "type": "header",
+      "content": "レイアウト設定"
+    },
+    {
+      "type": "select",
+      "id": "container_width",
+      "label": "セクションの幅",
+      "options": [
+        {
+          "value": "standard",
+          "label": "標準 (約1280px)"
+        },
+        {
+          "value": "wide",
+          "label": "ワイド (約1600px)"
+        },
+        {
+          "value": "full",
+          "label": "フル幅 (100%)"
+        }
+      ],
+      "default": "wide",
+      "info": "ページの表示幅を調整します。ワイドがおすすめです。"
+    },
+    {
+      "type": "text",
+      "id": "badge_text",
+      "label": "バッジテキスト",
+      "default": "オーダー商品"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_breadcrumb",
+      "label": "パンくずリストを表示",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "画像設定"
+    },
+    {
+      "type": "range",
+      "id": "max_thumbnail_images",
+      "label": "表示する画像の最大数",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 8,
+      "info": "0を選択するとすべての画像を表示します"
+    },
+    {
+      "type": "header",
+      "content": "カラー設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_color_selection",
+      "label": "カラー選択を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "color_label",
+      "label": "カラーのラベル",
+      "default": "色"
+    },
+    {
+      "type": "textarea",
+      "id": "custom_colors",
+      "label": "カスタムカラー設定",
+      "default": "アイボリー:#FFFFF0,ホワイト:#FFFFFF,ブラック:#000000,レッド:#FF0000,ブルー:#0000FF,グリーン:#008000,イエロー:#FFFF00,ピンク:#FFC0CB,パープル:#800080",
+      "info": "形式: カラー名:カラーコード,カラー名:カラーコード (例: アイボリー:#FFFFF0,ホワイト:#FFFFFF) 商品バリアント画像がある場合は画像が優先されます。"
+    },
+    {
+      "type": "header",
+      "content": "サイズ設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_size_selection",
+      "label": "サイズ選択を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "size_label",
+      "label": "サイズのラベル",
+      "default": "サイズ"
+    },
+    {
+      "type": "text",
+      "id": "size_options",
+      "label": "サイズオプション(カンマ区切り)",
+      "default": "S,M,L",
+      "info": "例: XS,S,M,L,XL または 7号,9号,11号,13号"
+    },
+    {
+      "type": "header",
+      "content": "配送設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_delivery_options",
+      "label": "配送オプションを有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "delivery_label",
+      "label": "納期のラベル",
+      "default": "納期"
+    },
+    {
+      "type": "text",
+      "id": "standard_delivery_name",
+      "label": "通常納期の名前",
+      "default": "納期4週間仕上げ（＋0円）"
+    },
+    {
+      "type": "text",
+      "id": "standard_delivery_description",
+      "label": "通常納期の説明",
+      "default": "ご注文から約4週間でお届け（追加料金なし）"
+    },
+    {
+      "type": "number",
+      "id": "standard_min_days",
+      "label": "通常配送の最短日数",
+      "default": 28
+    },
+    {
+      "type": "number",
+      "id": "standard_max_days",
+      "label": "通常配送の最長日数",
+      "default": 30
+    },
+    {
+      "type": "number",
+      "id": "standard_delivery_fee",
+      "label": "通常配送料金",
+      "default": 0,
+      "info": "0の場合は「無料」と表示されます"
+    },
+    {
+      "type": "text",
+      "id": "express_delivery_name",
+      "label": "特急便の名前",
+      "default": "特急便2週間仕上げ（＋10,000円）"
+    },
+    {
+      "type": "text",
+      "id": "express_delivery_description",
+      "label": "特急便の説明",
+      "default": "ご注文から約2週間でお届け（＋10,000円）"
+    },
+    {
+      "type": "number",
+      "id": "express_min_days",
+      "label": "速達配送の最短日数",
+      "default": 14
+    },
+    {
+      "type": "number",
+      "id": "express_max_days",
+      "label": "速達配送の最長日数",
+      "default": 16
+    },
+    {
+      "type": "number",
+      "id": "express_fee",
+      "label": "特急配送料金",
+      "default": 10000
+    },
+    {
+      "type": "header",
+      "content": "ご利用日設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_usage_date",
+      "label": "ご利用日を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "usage_date_label",
+      "label": "ご利用日のラベル",
+      "default": "ご利用日"
+    },
+    {
+      "type": "header",
+      "content": "グループ名設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_group_name",
+      "label": "グループ名を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "group_name_label",
+      "label": "グループ名のラベル",
+      "default": "グループ名(ブライズメイド様が個別にご注文の場合)"
+    },
+    {
+      "type": "text",
+      "id": "group_name_placeholder",
+      "label": "グループ名のプレースホルダー",
+      "default": "例:山田家結婚式"
+    },
+    {
+      "type": "header",
+      "content": "ご利用シーン設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_usage_scene",
+      "label": "ご利用シーンを有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "usage_scene_label",
+      "label": "ご利用シーンのラベル",
+      "default": "ご利用シーン"
+    },
+    {
+      "type": "textarea",
+      "id": "usage_scene_options",
+      "label": "ご利用シーンの選択肢(カンマ区切り)",
+      "default": "ブライズメイドドレスとして,結婚式,披露宴,二次会,パーティー,ステージ衣装として,その他",
+      "info": "例: 結婚式,披露宴,二次会,パーティー,その他"
+    },
+    {
+      "type": "header",
+      "content": "コメント設定"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_comments",
+      "label": "コメント欄を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "comments_label",
+      "label": "コメントのラベル",
+      "default": "ご要望・コメント"
+    },
+    {
+      "type": "text",
+      "id": "comments_placeholder",
+      "label": "コメントのプレースホルダー",
+      "default": "特別なご要望やご質問がございましたらご記入ください"
+    },
+    {
+      "type": "header",
+      "content": "利用規約"
+    },
+    {
+      "type": "text",
+      "id": "policy_text",
+      "label": "利用規約テキスト",
+      "default": "レンタル"
+    },
+    {
+      "type": "url",
+      "id": "policy_link",
+      "label": "利用規約リンク"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Default Product Page 1129"
+    }
+  ]
+}
+{% endschema %}
