@@ -1,0 +1,595 @@
+{% comment %}
+  Section: Immediate Shipping (PC Optimized)
+  Fixes: Larger text/box on Desktop. Removed leading slash from variant name.
+{% endcomment %}
+
+<link rel="stylesheet" href="{{ 'bridesmaids-preorder.css' | asset_url }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web/src/regular/style.css" />
+
+{%- capture container_width_class -%}
+  {%- case section.settings.container_width -%}
+    {%- when 'standard' -%}max-w-7xl
+    {%- when 'wide' -%}max-w-[1600px]
+    {%- when 'full' -%}max-w-full
+  {%- endcase -%}
+{%- endcapture -%}
+
+<div class="shopdev-pre-order-product-form w-full {{ container_width_class }} mx-auto px-4 py-8 md:py-12">
+  <style>
+    /* 画像サムネイル */
+    .chealsea-thumbnail-strip {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    
+    /* ★在庫表示エリア（モバイルはコンパクト、PCは大きく）★ */
+    #inventoryMessage {
+      display: none; /* デフォルト非表示 */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      
+      margin-bottom: 1rem;
+      padding: 0.75rem; /* モバイルは狭く */
+      background-color: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      gap: 0.25rem;
+    }
+
+    #inventoryMessage.visible {
+      display: flex;
+    }
+    
+    /* 残りわずか（赤枠強調） */
+    #inventoryMessage.low-stock {
+      border: 3px solid #dc2626;
+      background-color: #fffafa;
+    }
+
+    /* バリエーション名 (黒字・太く) */
+    .inventory-variant-name {
+      font-size: 1.1rem; /* モバイルサイズ */
+      color: #000;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* 残り点数 (赤字・大きく) */
+    .inventory-count-text {
+      font-size: 1.4rem; /* モバイルサイズ */
+      font-weight: 800;
+      color: #dc2626;
+      line-height: 1.2;
+    }
+
+    /* PC向けのサイズ調整（画面幅768px以上） */
+    @media (min-width: 768px) {
+      #inventoryMessage {
+        padding: 1.5rem; /* PCは余白たっぷり */
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        gap: 0.5rem;
+      }
+      .inventory-variant-name {
+        font-size: 1.5rem; /* PCは文字大きく */
+      }
+      .inventory-count-text {
+        font-size: 2rem; /* PCは数字ドカンと大きく */
+      }
+    }
+
+    /* 在庫あり（緑）の場合 */
+    #inventoryMessage.in-stock {
+      border-color: #16a34a;
+      background-color: #f0fdf4;
+    }
+    #inventoryMessage.in-stock .inventory-count-text {
+      color: #15803d;
+      font-size: 1.2rem;
+    }
+    @media (min-width: 768px) {
+      #inventoryMessage.in-stock .inventory-count-text {
+        font-size: 1.6rem; /* PCでの緑文字サイズ */
+      }
+    }
+    
+    /* 数量選択エリア */
+    .quantity-wrapper {
+      width: 140px;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      overflow: hidden;
+    }
+    .quantity-wrapper input {
+      border: none;
+      text-align: center;
+      width: 100%;
+      padding: 0.75rem 0;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #111;
+    }
+    .quantity-wrapper button {
+      padding: 0.75rem 1rem;
+      background: #f9fafb;
+      cursor: pointer;
+      color: #374151;
+      border: none;
+      transition: background 0.2s;
+    }
+    .quantity-wrapper button:hover {
+      background: #e5e7eb;
+    }
+
+    /* エラーメッセージ */
+    .error-alert {
+      color: #dc2626;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      font-weight: 600;
+      display: none;
+    }
+    .error-alert.visible {
+      display: block;
+    }
+    .input-error {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2;
+    }
+
+    {% if section.settings.container_width == 'wide' or section.settings.container_width == 'full' %}
+      @media (min-width: 1024px) {
+        .shopdev-pre-order-product-form .grid {
+          gap: 4rem;
+        }
+      }
+    {% endif %}
+  </style>
+
+  {% if section.settings.show_breadcrumb %}
+    <nav class="mb-6 text-sm">
+      <ol class="flex items-center space-x-2 text-gray-600">
+        <li><a href="/" class="hover:text-gray-900">ホーム</a></li>
+        <li><i class="ph ph-caret-right text-xs"></i></li>
+        <li><a href="/collections/all" class="hover:text-gray-900">商品一覧</a></li>
+        <li><i class="ph ph-caret-right text-xs"></i></li>
+        <li class="text-gray-900">{{ product.title }}</li>
+      </ol>
+    </nav>
+  {% endif %}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+    <div class="space-y-4">
+      <div class="relative aspect-[3/4] bg-gray-100">
+        {% if section.settings.badge_text != blank %}
+          <div class="badge-overlay">{{ section.settings.badge_text }}</div>
+        {% endif %}
+        <img id="mainImage" 
+             src="{{ product.featured_image | image_url: width: 1200 }}" 
+             alt="{{ product.title }}"
+             class="w-full h-full object-cover">
+      </div>
+      
+      {% if product.images.size > 1 %}
+        <div class="chealsea-thumbnail-strip flex gap-2 overflow-x-auto pb-2">
+          {% assign max_images = section.settings.max_thumbnail_images %}
+          {% for image in product.images limit: max_images %}
+            <div class="thumbnail-container flex-shrink-0 w-20 h-28 rounded-md overflow-hidden cursor-pointer" 
+                 onclick="changeMainImage('{{ image | image_url: width: 1200 }}', this)">
+              <img src="{{ image | image_url: width: 200 }}" 
+                   alt="{{ image.alt | escape }}"
+                   class="w-full h-full object-cover">
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold mb-2">{{ product.title }}</h1>
+        <div class="text-2xl font-semibold" id="priceDisplay">
+          ¥<span id="currentPrice">{{ product.price | money_without_currency }}</span>
+        </div>
+      </div>
+
+      <form id="immediateOrderForm" action="/cart/add" method="post" enctype="multipart/form-data" class="space-y-6">
+        
+        <div>
+           <div id="inventoryMessage">
+             </div>
+
+           <input type="hidden" id="selectedVariantId" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+           <div id="variantError" class="error-alert">サイズが選択されていません</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2" for="usageDate">
+            {{ section.settings.usage_date_label }} <span class="text-red-600">*</span>
+          </label>
+          <input type="date" 
+                 id="usageDate" 
+                 name="properties[{{ section.settings.usage_date_label }}]"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                 required>
+          <div id="dateError" class="error-alert">ご使用予定日を入力してください</div>
+        </div>
+
+        {% if section.settings.enable_usage_scene %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="usageScene">
+            {{ section.settings.usage_scene_label }} <span class="text-red-600">*</span>
+          </label>
+          <div class="relative">
+            <select id="usageScene" 
+                    name="properties[{{ section.settings.usage_scene_label }}]"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black bg-white appearance-none"
+                    required>
+              <option value="">選択してください</option>
+              {% assign scenes = section.settings.usage_scene_options | split: ',' %}
+              {% for scene in scenes %}
+                {% assign trimmed_scene = scene | strip %}
+                <option value="{{ trimmed_scene }}">{{ trimmed_scene }}</option>
+              {% endfor %}
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-700">
+              <i class="ph ph-caret-down"></i>
+            </div>
+          </div>
+          <div id="sceneError" class="error-alert">ご利用シーンを選択してください</div>
+        </div>
+        {% endif %}
+
+        {% if section.settings.enable_comments %}
+        <div>
+          <label class="block text-sm font-medium mb-2" for="comments">
+            {{ section.settings.comments_label }}
+          </label>
+          <textarea id="comments" 
+                    name="properties[{{ section.settings.comments_label }}]"
+                    rows="3"
+                    placeholder="{{ section.settings.comments_placeholder }}"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"></textarea>
+        </div>
+        {% endif %}
+
+        <div>
+          <label class="block text-sm font-medium mb-2">数量</label>
+          <div class="quantity-wrapper">
+            <button type="button" onclick="updateQuantity(-1)">
+              <i class="ph ph-minus"></i>
+            </button>
+            <input type="number" 
+                   id="quantity" 
+                   name="quantity"
+                   value="1" 
+                   min="1"
+                   readonly>
+            <button type="button" onclick="updateQuantity(1)">
+              <i class="ph ph-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-md">
+          <div class="flex justify-between items-center text-lg font-semibold">
+            <span>合計金額</span>
+            <span>¥<span id="totalPrice">{{ product.price | money_without_currency }}</span></span>
+          </div>
+        </div>
+
+        {% if section.settings.policy_text != blank %}
+          <div>
+            <div class="flex items-start space-x-2">
+              <input type="checkbox" 
+                     id="policyAgree" 
+                     class="mt-1"
+                     required>
+              <label for="policyAgree" class="text-sm text-gray-700">
+                {{ section.settings.policy_text }}
+                {% if section.settings.policy_link != blank %}
+                  <a href="{{ section.settings.policy_link }}" class="text-blue-600 hover:underline" target="_blank">利用規約</a>
+                {% endif %}
+                に同意します <span class="text-red-600">*</span>
+              </label>
+            </div>
+            <div id="policyError" class="error-alert">利用規約に同意してください</div>
+          </div>
+        {% endif %}
+
+        <button type="submit" 
+                id="addToCartBtn"
+                class="w-full bg-black text-white py-4 rounded-md font-medium hover:bg-gray-800 transition-colors duration-300 flex items-center justify-center space-x-2">
+          <i class="ph ph-shopping-bag text-xl"></i>
+          <span>カートに追加（即納）</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="variant-data">
+  {
+    {% for variant in product.variants %}
+      "{{ variant.id }}": {
+        "id": {{ variant.id }},
+        "title": "{{ variant.title }}",
+        "inventory": {{ variant.inventory_quantity }},
+        "available": {{ variant.available }},
+        "price": {{ variant.price }}
+      }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  }
+</script>
+
+<script>
+  // DOM要素
+  const form = document.getElementById('immediateOrderForm');
+  const inventoryMessage = document.getElementById('inventoryMessage');
+  const quantityInput = document.getElementById('quantity');
+  const hiddenInput = document.getElementById('selectedVariantId');
+  const variantData = JSON.parse(document.getElementById('variant-data').textContent);
+  
+  // URLからバリアントIDを取得して表示を更新する関数
+  function syncWithUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let variantId = urlParams.get('variant');
+    
+    if (!variantId && hiddenInput.value) {
+        variantId = hiddenInput.value;
+    }
+
+    if (variantId && variantData[variantId]) {
+        hiddenInput.value = variantId;
+        updateInventoryText(variantData[variantId]);
+    }
+  }
+
+  // 在庫テキスト更新ロジック
+  function updateInventoryText(variant) {
+    inventoryMessage.className = ''; 
+
+    if (variant.available) {
+      inventoryMessage.classList.add('visible');
+
+      if (variant.inventory > 0) {
+        if (variant.inventory <= 5) {
+          // 残りわずか（赤文字・枠付き・コンパクト）
+          inventoryMessage.classList.add('low-stock');
+          // ★修正: 先頭のスラッシュを削除し、サイズ / のみにする
+          inventoryMessage.innerHTML = `
+            <div class="inventory-variant-name">${variant.title} /</div>
+            <div class="inventory-count-text">残り ${variant.inventory} 点</div>
+          `;
+        } else {
+          // 在庫あり（緑文字）
+          inventoryMessage.classList.add('in-stock');
+          inventoryMessage.innerHTML = `
+            <div class="inventory-variant-name">${variant.title} /</div>
+            <div class="inventory-count-text">在庫あり</div>
+          `;
+        }
+        
+        quantityInput.setAttribute('max', variant.inventory);
+        if(parseInt(quantityInput.value) > variant.inventory) {
+          quantityInput.value = variant.inventory;
+        }
+      } else {
+        // 在庫管理なしの場合
+        inventoryMessage.classList.add('in-stock');
+        inventoryMessage.innerHTML = `
+            <div class="inventory-variant-name">${variant.title} /</div>
+            <div class="inventory-count-text">即納可能</div>
+        `;
+        quantityInput.removeAttribute('max');
+      }
+    } else {
+      // 売り切れの場合
+      inventoryMessage.classList.add('visible');
+      inventoryMessage.innerHTML = `
+        <div class="inventory-variant-name">${variant.title} /</div>
+        <div class="inventory-count-text" style="color:#666;font-size:1.2rem;">在庫なし</div>
+      `;
+    }
+  }
+
+  // イベントリスナー設定
+  document.addEventListener('DOMContentLoaded', syncWithUrl);
+
+  // URL変更監視
+  let lastUrl = location.href; 
+  new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      syncWithUrl();
+    }
+  }).observe(document, {subtree: true, childList: true});
+  
+  setInterval(syncWithUrl, 500);
+
+  // 数量ボタン操作
+  window.updateQuantity = function(change) {
+    let newValue = parseInt(quantityInput.value) + change;
+    const max = parseInt(quantityInput.getAttribute('max'));
+    
+    if (newValue < 1) newValue = 1;
+    if (max && newValue > max) newValue = max; 
+    
+    quantityInput.value = newValue;
+  };
+
+  window.changeMainImage = function(src, thumbnail) {
+    document.getElementById('mainImage').src = src;
+  };
+
+  // 送信時のバリデーション
+  form.addEventListener('submit', function(e) {
+    let isValid = true;
+    
+    if (!hiddenInput.value) {
+      isValid = false;
+      document.getElementById('variantError').classList.add('visible');
+    }
+
+    const usageDate = document.getElementById('usageDate');
+    if (!usageDate.value) {
+      isValid = false;
+      usageDate.classList.add('input-error');
+      document.getElementById('dateError').classList.add('visible');
+    } else {
+      usageDate.classList.remove('input-error');
+      document.getElementById('dateError').classList.remove('visible');
+    }
+
+    const usageScene = document.getElementById('usageScene');
+    if (usageScene && !usageScene.value) {
+      isValid = false;
+      usageScene.classList.add('input-error');
+      document.getElementById('sceneError').classList.add('visible');
+    } else {
+      usageScene.classList.remove('input-error');
+      document.getElementById('sceneError').classList.remove('visible');
+    }
+
+    const policyAgree = document.getElementById('policyAgree');
+    if (policyAgree && !policyAgree.checked) {
+      isValid = false;
+      document.getElementById('policyError').classList.add('visible');
+    } else {
+      document.getElementById('policyError').classList.remove('visible');
+    }
+
+    if (!isValid) {
+      e.preventDefault();
+      const firstError = document.querySelector('.error-alert.visible, .input-error');
+      if (firstError) {
+        firstError.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Immediate Final PC",
+  "settings": [
+    {
+      "type": "header",
+      "content": "レイアウト"
+    },
+    {
+      "type": "select",
+      "id": "container_width",
+      "label": "セクションの幅",
+      "options": [
+        { "value": "standard", "label": "標準" },
+        { "value": "wide", "label": "ワイド" },
+        { "value": "full", "label": "フル幅" }
+      ],
+      "default": "wide"
+    },
+    {
+      "type": "text",
+      "id": "badge_text",
+      "label": "画像バッジ",
+      "default": "即日発送可能"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_breadcrumb",
+      "label": "パンくずリスト",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "画像"
+    },
+    {
+      "type": "range",
+      "id": "max_thumbnail_images",
+      "label": "サムネイル表示数",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "フォーム項目"
+    },
+    {
+      "type": "text",
+      "id": "usage_date_label",
+      "label": "ご使用予定日のラベル",
+      "default": "ご使用予定日"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_usage_scene",
+      "label": "ご利用シーンを有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "usage_scene_label",
+      "label": "ご利用シーンのラベル",
+      "default": "ご利用シーン"
+    },
+    {
+      "type": "textarea",
+      "id": "usage_scene_options",
+      "label": "シーン選択肢(カンマ区切り)",
+      "default": "ブライズメイドドレスとして,フラダンス・ステージ衣装として,ゲストドレス・パーティードレスとして,演奏会ドレスとして,その他"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_comments",
+      "label": "コメント欄を有効にする",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "comments_label",
+      "label": "コメントラベル",
+      "default": "ご要望・コメント"
+    },
+    {
+      "type": "text",
+      "id": "comments_placeholder",
+      "label": "プレースホルダー",
+      "default": "配送時間帯のご希望など"
+    },
+    {
+      "type": "header",
+      "content": "規約"
+    },
+    {
+      "type": "text",
+      "id": "policy_text",
+      "label": "規約同意テキスト",
+      "default": "返品・交換ポリシー"
+    },
+    {
+      "type": "url",
+      "id": "policy_link",
+      "label": "ポリシーページリンク"
+    }
+  ],
+  "presets": [
+    {
+      "name": "即納商品 (PCサイズ調整版)"
+    }
+  ],
+  "templates": ["product"]
+}
+{% endschema %}
