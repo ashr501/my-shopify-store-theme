@@ -3,6 +3,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web/src/regular/style.css" />
 
 <style>
+  /* --- 基本スタイル (スマホベース / 共通) --- */
+  .shopdev-product-details-accordion .accordion-container {
+    width: 100%;
+    margin: 0 auto;
+    /* スマホでは画面端の余白を確保 */
+    padding: 0 16px; 
+  }
+
   .shopdev-product-details-accordion .accordion-item {
     border-bottom: 1px solid #e5e7eb;
   }
@@ -41,10 +49,11 @@
   }
 
   .shopdev-product-details-accordion .accordion-content.active {
-    max-height: 5000px; /* 動画が増えるため高さをさらに余裕持たせました */
+    max-height: 5000px; 
     padding-bottom: 20px;
   }
 
+  /* スマホ用デフォルトフォントサイズ */
   .shopdev-product-details-accordion .accordion-title {
     font-size: 16px;
     font-weight: 700;
@@ -52,16 +61,23 @@
     padding-right: 16px;
   }
 
+  .shopdev-product-details-accordion .accordion-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #6b7280;
+  }
+
+  /* Notice Box Styles */
   .shopdev-product-details-accordion .notice-box {
     background-color: #fef3c7;
     border: 2px solid #f59e0b;
     border-radius: 8px;
-    padding: 20px;
+    padding: 16px;
     margin-bottom: 16px;
   }
 
   .shopdev-product-details-accordion .notice-box-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     margin: 0 0 12px 0;
     display: flex;
@@ -75,36 +91,16 @@
   }
 
   .shopdev-product-details-accordion .notice-box-content {
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
   }
 
-  @media (max-width: 768px) {
-    .shopdev-product-details-accordion .notice-box {
-      padding: 16px;
-    }
-
-    .shopdev-product-details-accordion .notice-box-title {
-      font-size: 15px;
-    }
-
-    .shopdev-product-details-accordion .notice-box-content {
-      font-size: 13px;
-    }
-  }
-
-  .shopdev-product-details-accordion .accordion-text {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #6b7280;
-  }
-  
   .shopdev-product-details-accordion .accordion-text img {
     max-width: 100%;
     height: auto;
   }
 
-  /* --- 動画用の追加スタイル --- */
+  /* --- 動画用スタイル --- */
   .shopdev-product-details-accordion .accordion-video-wrapper {
     margin-top: 16px;
     width: 100%;
@@ -114,12 +110,11 @@
     position: relative;
     background: #000;
   }
-  
-  /* YouTube用: アスペクト比を維持 */
+   
   .shopdev-product-details-accordion .youtube-wrapper {
     aspect-ratio: 16 / 9;
   }
-  
+   
   .shopdev-product-details-accordion .youtube-wrapper iframe {
     position: absolute;
     top: 0;
@@ -136,20 +131,8 @@
     border-radius: 8px;
   }
 
-  /* PC/SP 切り替えロジック */
+  /* --- PC/SP 切り替えユーティリティ --- */
   @media (max-width: 768px) {
-    .shopdev-product-details-accordion .accordion-button {
-      padding: 16px 0;
-    }
-
-    .shopdev-product-details-accordion .accordion-title {
-      font-size: 15px;
-    }
-
-    .shopdev-product-details-accordion .accordion-text {
-      font-size: 13px;
-    }
-
     .shopdev-hidden-on-mobile {
       display: none !important;
     }
@@ -158,17 +141,50 @@
     }
   }
 
+  /* --- PC表示のオーバーライド --- */
   @media (min-width: 769px) {
+    .shopdev-product-details-accordion .accordion-container {
+      /* コンテナ幅を広げる */
+      max-width: 1000px;
+      padding: 0 40px;
+    }
+
     .shopdev-hidden-on-desktop {
       display: none !important;
     }
     .shopdev-hidden-on-mobile {
       display: block !important;
+    }
+
+    /* フォントサイズと余白の拡大 */
+    .shopdev-product-details-accordion .accordion-button {
+      padding: 24px 0; 
+    }
+
+    .shopdev-product-details-accordion .accordion-title {
+      font-size: 20px;
+    }
+
+    .shopdev-product-details-accordion .accordion-text {
+      font-size: 16px;
+      line-height: 1.8;
+    }
+    
+    .shopdev-product-details-accordion .notice-box {
+      padding: 24px;
+    }
+    
+    .shopdev-product-details-accordion .notice-box-title {
+      font-size: 18px;
+    }
+    
+    .shopdev-product-details-accordion .notice-box-content {
+      font-size: 15px;
     }
   }
 </style>
 
-<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="w-full py-8">
   {% if section.settings.section_title != blank %}
     <h2 class="text-2xl md:text-3xl font-bold mb-6 text-center" style="color: {{ section.settings.title_color }}">
       {{ section.settings.section_title }}
@@ -177,6 +193,8 @@
 
   <div class="accordion-container">
     {% for block in section.blocks %}
+      
+      {% comment %} --- 注意事項ボックス --- {% endcomment %}
       {% if block.type == 'notice_box' %}
         {% if block.settings.title != blank %}
           <div class="notice-box" {{ block.shopify_attributes }} style="background-color: {{ block.settings.background_color }}; 
@@ -192,6 +210,8 @@ border-color: {{ block.settings.border_color }};">
             {% endif %}
           </div>
         {% endif %}
+
+      {% comment %} --- 通常のテキストアコーディオン (ファイル動画含む) --- {% endcomment %}
       {% elsif block.type == 'accordion_item' %}
         {% if block.settings.title != blank %}
           <div class="accordion-item" {{ block.shopify_attributes }}>
@@ -208,8 +228,6 @@ border-color: {{ block.settings.border_color }};">
             </button>
             
             <div class="accordion-content {% if block.settings.open_by_default %}active{% endif %}" data-accordion-content>
-              
-              {% comment %} テキストコンテンツ / 商品説明 {% endcomment %}
               <div class="accordion-text" style="color: {{ section.settings.content_color }}">
                 {% if block.settings.use_product_description %}
                   {{ product.description }}
@@ -220,30 +238,45 @@ border-color: {{ block.settings.border_color }};">
                 {% endif %}
               </div>
 
-              {% comment %} --- ファイルアップロード動画 (PC/SP出し分け) --- {% endcomment %}
-              
+              {% comment %} ファイルアップロード動画 {% endcomment %}
               {% assign video_autoplay = block.settings.video_autoplay %}
               {% assign video_controls = true %}
               {% if video_autoplay %}
                 {% assign video_controls = false %}
               {% endif %}
 
-              {% comment %} PC用動画 {% endcomment %}
               {% if block.settings.video_pc != blank %}
                 <div class="accordion-video-wrapper {% if block.settings.video_mobile != blank %}shopdev-hidden-on-mobile{% endif %}">
                   {{ block.settings.video_pc | video_tag: image_size: '1200x', loop: video_autoplay, autoplay: video_autoplay, muted: video_autoplay, controls: video_controls, playsinline: true }}
                 </div>
               {% endif %}
-
-              {% comment %} スマホ用動画 {% endcomment %}
               {% if block.settings.video_mobile != blank %}
                 <div class="accordion-video-wrapper shopdev-hidden-on-desktop">
                   {{ block.settings.video_mobile | video_tag: image_size: '600x', loop: video_autoplay, autoplay: video_autoplay, muted: video_autoplay, controls: video_controls, playsinline: true }}
                 </div>
               {% endif %}
+            </div>
+          </div>
+        {% endif %}
 
-              {% comment %} --- YouTube動画 (複数掲載可能) --- {% endcomment %}
-              
+      {% comment %} --- YouTube専用アコーディオン (新設) --- {% endcomment %}
+      {% elsif block.type == 'youtube_accordion' %}
+        {% if block.settings.title != blank %}
+          <div class="accordion-item" {{ block.shopify_attributes }}>
+            <button 
+              class="accordion-button {% if block.settings.open_by_default %}active{% endif %}" 
+              type="button"
+              aria-expanded="{% if block.settings.open_by_default %}true{% else %}false{% endif %}"
+              data-accordion-button
+            >
+              <h3 class="accordion-title" style="color: {{ section.settings.text_color }}">
+                {{ block.settings.title }}
+              </h3>
+              <i class="ph ph-caret-down accordion-icon" style="color: {{ section.settings.icon_color }}"></i>
+            </button>
+            
+            <div class="accordion-content {% if block.settings.open_by_default %}active{% endif %}" data-accordion-content>
+              {% comment %} Video 1 {% endcomment %}
               {% if block.settings.youtube_video_1 != blank %}
                 <div class="accordion-video-wrapper youtube-wrapper">
                   {% if block.settings.youtube_video_1.type == 'youtube' %}
@@ -253,7 +286,7 @@ border-color: {{ block.settings.border_color }};">
                   {% endif %}
                 </div>
               {% endif %}
-
+              {% comment %} Video 2 {% endcomment %}
               {% if block.settings.youtube_video_2 != blank %}
                 <div class="accordion-video-wrapper youtube-wrapper">
                   {% if block.settings.youtube_video_2.type == 'youtube' %}
@@ -263,7 +296,7 @@ border-color: {{ block.settings.border_color }};">
                   {% endif %}
                 </div>
               {% endif %}
-
+              {% comment %} Video 3 {% endcomment %}
               {% if block.settings.youtube_video_3 != blank %}
                 <div class="accordion-video-wrapper youtube-wrapper">
                   {% if block.settings.youtube_video_3.type == 'youtube' %}
@@ -273,10 +306,30 @@ border-color: {{ block.settings.border_color }};">
                   {% endif %}
                 </div>
               {% endif %}
-              
+              {% comment %} Video 4 {% endcomment %}
+              {% if block.settings.youtube_video_4 != blank %}
+                <div class="accordion-video-wrapper youtube-wrapper">
+                  {% if block.settings.youtube_video_4.type == 'youtube' %}
+                    <iframe src="https://www.youtube.com/embed/{{ block.settings.youtube_video_4.id }}?playsinline=1&modestbranding=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                  {% elsif block.settings.youtube_video_4.type == 'vimeo' %}
+                    <iframe src="https://player.vimeo.com/video/{{ block.settings.youtube_video_4.id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% comment %} Video 5 {% endcomment %}
+              {% if block.settings.youtube_video_5 != blank %}
+                <div class="accordion-video-wrapper youtube-wrapper">
+                  {% if block.settings.youtube_video_5.type == 'youtube' %}
+                    <iframe src="https://www.youtube.com/embed/{{ block.settings.youtube_video_5.id }}?playsinline=1&modestbranding=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                  {% elsif block.settings.youtube_video_5.type == 'vimeo' %}
+                    <iframe src="https://player.vimeo.com/video/{{ block.settings.youtube_video_5.id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                  {% endif %}
+                </div>
+              {% endif %}
             </div>
           </div>
         {% endif %}
+
       {% endif %}
     {% endfor %}
   </div>
@@ -299,7 +352,8 @@ border-color: {{ block.settings.border_color }};">
     toggleAccordion(button) {
       const content = button.nextElementSibling;
       const isActive = button.classList.contains('active');
-      // Close all accordions if single_open is enabled
+      
+      // single_open が有効なら他のアコーディオンを閉じる
       {% if section.settings.single_open %}
       this.buttons.forEach(btn => {
         if (btn !== button) {
@@ -310,7 +364,6 @@ border-color: {{ block.settings.border_color }};">
           const videos = btn.nextElementSibling.querySelectorAll('video, iframe');
           videos.forEach(v => {
             if(v.tagName === 'VIDEO') v.pause();
-            // iframe(YouTube)の停止は複雑なため、srcをリセットする簡易リセット
             if(v.tagName === 'IFRAME') {
                const src = v.src;
                v.src = src; 
@@ -320,7 +373,6 @@ border-color: {{ block.settings.border_color }};">
       });
       {% endif %}
 
-      // Toggle current accordion
       if (isActive) {
         button.classList.remove('active');
         button.setAttribute('aria-expanded', 'false');
@@ -337,14 +389,12 @@ border-color: {{ block.settings.border_color }};">
     }
   }
 
-  // Initialize accordion
   document.addEventListener('DOMContentLoaded', () => {
     const accordionContainers = document.querySelectorAll('.accordion-container');
     accordionContainers.forEach(container => {
       new ProductAccordion(container);
     });
   });
-  // Reinitialize on Shopify section events
   if (Shopify && Shopify.designMode) {
     document.addEventListener('shopify:section:load', (event) => {
       const container = event.target.querySelector('.accordion-container');
@@ -370,8 +420,7 @@ border-color: {{ block.settings.border_color }};">
       "type": "checkbox",
       "id": "single_open",
       "label": "一度に1つのみ開く",
-      "default": true,
-      "info": "有効にすると、1つのアコーディオンを開くと他のアコーディオンが自動的に閉じます"
+      "default": true
     },
     {
       "type": "header",
@@ -405,7 +454,7 @@ border-color: {{ block.settings.border_color }};">
   "blocks": [
     {
       "type": "accordion_item",
-      "name": "アコーディオン項目",
+      "name": "テキスト・画像ブロック",
       "settings": [
         {
           "type": "text",
@@ -417,48 +466,55 @@ border-color: {{ block.settings.border_color }};">
           "type": "checkbox",
           "id": "use_product_description",
           "label": "商品詳細説明を自動で読み込む",
-          "default": false,
-          "info": "有効にすると、下のコンテンツ入力欄は無視され、商品管理画面の「説明」がここに表示されます。"
+          "default": false
         },
         {
           "type": "richtext",
           "id": "content",
-          "label": "テキストコンテンツ",
-          "default": "<p>こちらに商品の詳細情報を入力してください。</p>"
+          "label": "コンテンツ",
+          "default": "<p>テキストを入力してください</p>"
         },
         {
           "type": "header",
-          "content": "ファイルアップロード動画設定"
-        },
-        {
-          "type": "paragraph",
-          "content": "Shopifyにアップロードした動画を使用する場合 (PC/スマホ出し分け可)"
+          "content": "ファイルアップロード動画"
         },
         {
           "type": "video",
           "id": "video_pc",
-          "label": "動画 (PC用/共通)",
-          "info": "スマホ用動画が未設定の場合、こちらがスマホでも表示されます。"
+          "label": "動画 (PC/共通)"
         },
         {
           "type": "video",
           "id": "video_mobile",
-          "label": "動画 (スマホ用)",
-          "info": "設定すると、スマホ（幅768px以下）ではこちらの動画が表示されます。"
+          "label": "動画 (スマホ用)"
         },
         {
           "type": "checkbox",
           "id": "video_autoplay",
-          "label": "自動再生・ループ・ミュートを有効にする",
+          "label": "自動再生・ループ有効",
           "default": true
         },
         {
-          "type": "header",
-          "content": "YouTube/Vimeo設定"
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "デフォルトで開く",
+          "default": false
+        }
+      ]
+    },
+    {
+      "type": "youtube_accordion",
+      "name": "YouTube動画ブロック",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "アコーディオンタイトル",
+          "default": "動画ギャラリー"
         },
         {
           "type": "paragraph",
-          "content": "YouTubeやVimeoのURLを入力してください（最大3つ）。"
+          "content": "最大5つまで動画を設定できます。"
         },
         {
           "type": "video_url",
@@ -479,6 +535,18 @@ border-color: {{ block.settings.border_color }};">
           "accept": ["youtube", "vimeo"]
         },
         {
+          "type": "video_url",
+          "id": "youtube_video_4",
+          "label": "YouTube動画 4",
+          "accept": ["youtube", "vimeo"]
+        },
+        {
+          "type": "video_url",
+          "id": "youtube_video_5",
+          "label": "YouTube動画 5",
+          "accept": ["youtube", "vimeo"]
+        },
+        {
           "type": "checkbox",
           "id": "open_by_default",
           "label": "デフォルトで開く",
@@ -494,17 +562,12 @@ border-color: {{ block.settings.border_color }};">
           "type": "text",
           "id": "title",
           "label": "タイトル",
-          "default": "事前にご確認ください"
+          "default": "確認事項"
         },
         {
           "type": "richtext",
           "id": "content",
-          "label": "コンテンツ",
-          "default": "<p>重要な注意事項をこちらに記載してください。</p>"
-        },
-        {
-          "type": "header",
-          "content": "カラー設定"
+          "label": "コンテンツ"
         },
         {
           "type": "color",
@@ -515,19 +578,19 @@ border-color: {{ block.settings.border_color }};">
         {
           "type": "color",
           "id": "border_color",
-          "label": "枠線の色",
+          "label": "枠線色",
           "default": "#f59e0b"
         },
         {
           "type": "color",
           "id": "title_color",
-          "label": "タイトルの色",
+          "label": "タイトル色",
           "default": "#92400e"
         },
         {
           "type": "color",
           "id": "text_color",
-          "label": "テキストの色",
+          "label": "テキスト色",
           "default": "#78350f"
         }
       ]
@@ -536,24 +599,11 @@ border-color: {{ block.settings.border_color }};">
   "presets": [
     {
       "name": "Product Details Accordion",
-      "settings": {
-        "section_title": "商品について",
-        "single_open": true,
-        "title_color": "#000000",
-        "text_color": "#000000",
-        "content_color": "#6b7280",
-        "icon_color": "#000000"
-      },
       "blocks": [
         {
           "type": "notice_box",
           "settings": {
-            "title": "事前にご確認ください",
-            "content": "<p>・お取り寄せ商品は、ご注文後2〜3週間でのお届けとなります。<br>・商品の色味は、お使いのモニターにより実際の色と異なる場合がございます。<br>・返品・交換は未使用・タグ付きの状態で商品到着後7日以内に限ります。</p>",
-            "background_color": "#fef3c7",
-            "border_color": "#f59e0b",
-            "title_color": "#92400e",
-            "text_color": "#78350f"
+            "content": "<p>ここに注意事項が入ります。</p>"
           }
         },
         {
@@ -565,18 +615,9 @@ border-color: {{ block.settings.border_color }};">
           }
         },
         {
-          "type": "accordion_item",
+          "type": "youtube_accordion",
           "settings": {
-            "title": "着用方法・スタイリング（動画あり）",
-            "content": "<p>動画で着用方法をご確認いただけます。</p>",
-            "open_by_default": false
-          }
-        },
-        {
-          "type": "accordion_item",
-          "settings": {
-            "title": "素材・お手入れ方法",
-            "content": "<p><strong>素材:</strong> ポリエステル95%、スパンデックス5%<br><strong>お手入れ:</strong> 手洗いまたは洗濯機の弱水流で洗濯可能。低温でアイロンをかけてください。漂白剤の使用は避けてください。</p>",
+            "title": "関連動画",
             "open_by_default": false
           }
         }
